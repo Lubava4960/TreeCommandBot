@@ -1,30 +1,73 @@
 package org.example.config;
 
-import lombok.Data;
-import lombok.EqualsAndHashCode;
-import lombok.Getter;
-import lombok.Setter;
-import org.springframework.stereotype.Service;
+import com.vdurmont.emoji.EmojiParser;
+import lombok.*;
+import lombok.extern.slf4j.Slf4j;
+import org.example.model.User;
+import org.example.repository.UserRepository;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
+import org.telegram.telegrambots.meta.api.methods.commands.SetMyCommands;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
+import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.Update;
+import org.telegram.telegrambots.meta.api.objects.commands.BotCommand;
+import org.telegram.telegrambots.meta.api.objects.commands.scope.BotCommandScopeDefault;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardMarkup;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.KeyboardRow;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
-@EqualsAndHashCode(callSuper = true)
+import java.sql.Timestamp;
+import java.util.ArrayList;
+import java.util.List;
 
+@EqualsAndHashCode(callSuper = true)
+@Slf4j
 @Data
-@Getter
+@Generated
 @Setter
-@Service
+@Component
 
 public  class TelegramBotListener extends TelegramLongPollingBot {
+    @Autowired
+    private UserRepository userRepository;
 
-    TelegramBotConfiguration config;
+
+    final TelegramBotConfiguration config;
+
+
+    static final String HELP_TEXT="This bot add category tree, delete element category, shows category tree \n\n"+
+            "you can execute commands from the main menu on the left or by typing a command \n\n"+
+            "Type /start to see a welcome message \n\n"+
+            "Type /help to see info \n\n"+
+            "Type /addRoot to see a add Root category \n\n"+
+            "Type /addCategory to see a add child category \n\n"+
+            "Type /viewCategory to see a category tree \n\n"+
+            "Type /removeElement element category you mast  a remove element";
+    private org.hibernate.sql.Update update;
+
 
     public TelegramBotListener (TelegramBotConfiguration config) {
 
         this.config = config;
-    }
+
+        List<BotCommand> listOfCommands=new ArrayList<>();
+        listOfCommands.add(new BotCommand("/start", "get a welcome message"));
+        listOfCommands.add(new BotCommand("/help","info how to use this bot"));
+        listOfCommands.add(new BotCommand("/addRoot","add Root Category"));
+        listOfCommands.add(new BotCommand("/addCategory","add child category"));
+        listOfCommands.add(new BotCommand("/viewCategory","shows category tree"));
+
+        try{
+            this.execute(new SetMyCommands(listOfCommands, new BotCommandScopeDefault(),null));
+        }catch (TelegramApiException e){
+
+            log.error("Error setting bot command list");
+
+        }
+
+        }
 
     @Override
     public void onUpdateReceived(Update update) {
@@ -33,13 +76,17 @@ public  class TelegramBotListener extends TelegramLongPollingBot {
             long chatId=update.getMessage().getChatId();
             switch (messageText){
                 case "/start":
+                    registerUser(update.getMessage());
                     try {
                         startCommandReceived(chatId, update.getMessage().getChat().getFirstName());
                     } catch (TelegramApiException e) {
                         throw new RuntimeException(e);
                     }
-
                     break;
+                case "/help":
+                    sendMessage(chatId, HELP_TEXT);
+                    break;
+
                 default:
                     sendMessage(chatId, "Sorry, command was not recognized! ");
 
@@ -48,22 +95,62 @@ public  class TelegramBotListener extends TelegramLongPollingBot {
         }
     }
 
-    public void startCommandReceived(long chatId, String name) throws TelegramApiException {
-        String answer = ("Hi," + name+ " nice to meet you! ") ;
-        sendMessage(chatId,answer);
 
+
+    private void registerUser(Message msg) {
+        if(userRepository.findById(msg.getChatId()).isEmpty()){
+            var chatId=msg.getChatId();
+            var chat=msg.getChat();
+            User user= new User();
+            user.setChatId(chatId);
+            user.setFirstName(chat.getFirstName());
+            user.setLastName(chat.getLastName());
+            user.setUserName(chat.getUserName());
+            user.setRegisteredAt(new Timestamp(System.currentTimeMillis()));
+            userRepository.save(user);
+            log.info("user saved: "+user);
+        }
 
     }
+
+    public void startCommandReceived(long chatId, String name) throws TelegramApiException {
+
+        String answer= EmojiParser.parseToUnicode("Hi," + name+ " nice to meet you! "+":blush:");
+        log.info("replied to user "+ name);
+        sendMessage(chatId,answer);
+
+    }
+    public void saveRoot(long chatId, String name)throws TelegramApiException{
+        String answer= EmojiParser.parseToUnicode("add Root"+":blush");
+        log.info("add Root ");
+
+        sendMessage(chatId,answer);
+    }
+
 
     public  void sendMessage(long chatId, String textToSend){
         SendMessage message=new SendMessage();
         message.setChatId(String.valueOf(chatId));
         message.setText(textToSend);
-        message.setReplyMarkup(message.getReplyMarkup());
+        ReplyKeyboardMarkup keyboardMarkup=new ReplyKeyboardMarkup();
+        List<KeyboardRow> keyboardRows=new ArrayList<>();
+        KeyboardRow row = new KeyboardRow();
+        row.add("/addRoot");
+        row.add("/addCategory");
+        keyboardRows.add(row);
+
+        row= new KeyboardRow();
+
+        row.add("/viewCategory");
+        row.add("/removeElement");
+        keyboardRows.add(row);
+        keyboardMarkup.setKeyboard(keyboardRows);
+        message.setReplyMarkup(keyboardMarkup);
+
         try {
             execute(message);
         }catch (TelegramApiException e){
-
+            log.error("Error occurred: "+ e.getMessage());
         }
 
     }
