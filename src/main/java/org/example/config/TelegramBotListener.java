@@ -10,11 +10,14 @@ import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.api.methods.commands.SetMyCommands;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
+import org.telegram.telegrambots.meta.api.methods.updatingmessages.EditMessageText;
 import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.api.objects.commands.BotCommand;
 import org.telegram.telegrambots.meta.api.objects.commands.scope.BotCommandScopeDefault;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardMarkup;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.KeyboardRow;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
@@ -44,7 +47,7 @@ public  class TelegramBotListener extends TelegramLongPollingBot {
             "Type /addRoot to see a add Root category \n\n"+
             "Type /addCategory to see a add child category \n\n"+
             "Type /viewCategory to see a category tree \n\n"+
-            "Type /removeElement element category you mast  a remove element";
+            "Type /removeElement element category you mast  a remove element" ;
     private org.hibernate.sql.Update update;
 
 
@@ -86,16 +89,78 @@ public  class TelegramBotListener extends TelegramLongPollingBot {
                 case "/help":
                     sendMessage(chatId, HELP_TEXT);
                     break;
+                case "/addRoot":
+                    addRoot(chatId);
+                    break;
 
                 default:
                     sendMessage(chatId, "Sorry, command was not recognized! ");
 
+            }
+        }else if (update.hasCallbackQuery()){
+            String callbackData=update.getCallbackQuery().getData();
+            long messageId = update.getCallbackQuery().getMessage().getMessageId();
+            long chatId = update.getCallbackQuery().getMessage().getChatId();
+            if (callbackData.equals("YES_BUTTON")){
+                String text = "You have added a root category";
+                EditMessageText message = new EditMessageText();
+                message.setChatId(String.valueOf(chatId));
+                message.setText(text);
+                message.setMessageId((int)messageId);
+
+                try {
+                    execute(message);
+                }catch (TelegramApiException e){
+                    log.error("Error occurred: "+ e.getMessage());
+                }
+            }else if(callbackData.equals("NO_BUTTON")){
+                String text = "You haven't added a root category";
+                EditMessageText message = new EditMessageText();
+                message.setChatId(String.valueOf(chatId));
+                message.setText(text);
+                message.setMessageId((int)messageId);
+
+                try {
+                    execute(message);
+                }catch (TelegramApiException e){
+                    log.error("Error occurred: "+ e.getMessage());
+                }
 
             }
+
         }
+
     }
 
+   private void addRoot(long chatId){
+        SendMessage message = new SendMessage();
+        message.setChatId(String.valueOf(chatId));
+        message.setText("Do you want to add a root category? ");
+       InlineKeyboardMarkup markupInline=new InlineKeyboardMarkup();
+       List<List<InlineKeyboardButton>> rowsInline= new ArrayList<>();
+       List<InlineKeyboardButton>rowInline=new ArrayList<>();
+       var yesButton = new InlineKeyboardButton();
 
+       yesButton.setText("Yes");
+       yesButton.setCallbackData("YES_BUTTON");
+
+       var noButton = new InlineKeyboardButton();
+       noButton.setText("No");
+       noButton.setCallbackData("NO_BUTTON");
+
+       rowInline.add(yesButton);
+       rowInline.add(noButton);
+
+       rowsInline.add(rowInline);
+       markupInline.setKeyboard(rowsInline);
+       message.setReplyMarkup(markupInline);
+       try {
+           execute(message);
+       }catch (TelegramApiException e){
+           log.error("Error occurred: "+ e.getMessage());
+       }
+
+   }
 
     private void registerUser(Message msg) {
         if(userRepository.findById(msg.getChatId()).isEmpty()){
