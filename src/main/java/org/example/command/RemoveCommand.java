@@ -51,7 +51,10 @@ public class RemoveCommand implements Command {
           telegramBotListener.sendMessage(chatId,text);
          }
 
-
+    @Override
+    public String getCommand() {
+        return "/removeCommand";
+    }
 
 
 }

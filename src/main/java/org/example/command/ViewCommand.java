@@ -34,7 +34,10 @@ public class ViewCommand implements Command{
     public void execute(Update update) throws TelegramApiException {
 
     }
-
+    @Override
+    public String getCommand() {
+        return "/viewCommand";
+    }
 
 }
 

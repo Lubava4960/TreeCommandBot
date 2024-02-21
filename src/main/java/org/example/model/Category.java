@@ -25,8 +25,8 @@ public class Category {
      * Название категории является обязательным полем и имеет ограничение по длине
      * в 30 символов.
      */
-    @Column(nullable = false, length = 30)
-    private String name;
+    @Column( length = 30)
+    private String title;
 
     /**
      * Идентификатор чата.
@@ -37,15 +37,28 @@ public class Category {
     /**
      * Конструктор класса Category.
      */
-    public Category(Long id, String child, long chatId) {
+
+    public Category(Long id, Long parentId, String title, long chatId) {
+        this.id = id;
         this.parentId = parentId;
-        this.name = name;
-        this.chatId = this.chatId;
+        this.title = title;
+        this.chatId = chatId;
     }
 
+    public Category() {
 
-    public void setName(String name) {
-        this.name = name;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public void setParentId(Long parentId) {
+        this.parentId = parentId;
+    }
+
+    public void setName() {
+        this.title = title;
     }
 
     public void setChatId(long chatId) {

@@ -58,6 +58,11 @@ public class AddCommand implements Command{
         telegramBotListener.sendMessage(chatId, message);
      }
 
+    @Override
+    public String getCommand() {
+        return "/addRoot";
+    }
+
 }
 
 

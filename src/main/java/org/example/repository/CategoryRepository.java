@@ -53,13 +53,13 @@ public interface CategoryRepository extends JpaRepository<Category, Long> {
      * @param chatId Идентификатор чата.
      * @param id     Идентификатор категории, которую следует удалить вместе с дочерними категориями.
      */
-    @Transactional
-    @Modifying
-    @Query(value = "WITH RECURSIVE category_tree(chat_id, id) AS (SELECT chat_id, id FROM category WHERE chat_id = ?1 AND id = ?2 " +
-            "UNION ALL SELECT c.id, c.chat_id FROM category c JOIN category_tree ct ON c.parent_id = ct.id) " +
-            "DELETE FROM category WHERE id IN (SELECT id FROM category_tree)",
-            nativeQuery = true)
-    void deleteCategoryAndChildByChatIdAndId(long chatId, Long id);
+      @Transactional
+      @Modifying
+      @Query(value = "WITH RECURSIVE category_tree(chat_id, id) AS (SELECT chat_id, id FROM category WHERE chat_id = ?1 AND id = ?2 " +
+              "UNION ALL SELECT c.id, c.chat_id FROM category c JOIN category_tree ct ON c.parent_id = ct.id) " +
+             "DELETE FROM category WHERE id IN (SELECT id FROM category_tree)",
+             nativeQuery = true)
+      void deleteCategoryAndChildByChatIdAndId(long chatId, Long id);
 
 
 }

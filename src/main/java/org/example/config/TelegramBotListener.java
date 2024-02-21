@@ -3,27 +3,31 @@ package org.example.config;
 import com.vdurmont.emoji.EmojiParser;
 import lombok.*;
 import lombok.extern.slf4j.Slf4j;
+import org.example.command.Command;
+import org.example.model.Category;
 import org.example.model.User;
+import org.example.repository.CategoryRepository;
 import org.example.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
-import org.telegram.telegrambots.meta.api.methods.commands.SetMyCommands;
+import org.telegram.telegrambots.meta.api.methods.GetFile;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
-import org.telegram.telegrambots.meta.api.methods.updatingmessages.EditMessageText;
+import org.telegram.telegrambots.meta.api.objects.File;
 import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.Update;
-import org.telegram.telegrambots.meta.api.objects.commands.BotCommand;
-import org.telegram.telegrambots.meta.api.objects.commands.scope.BotCommandScopeDefault;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardMarkup;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.KeyboardRow;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
+import javax.annotation.PostConstruct;
 import java.sql.Timestamp;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @EqualsAndHashCode(callSuper = true)
 @Slf4j
@@ -33,12 +37,21 @@ import java.util.List;
 @Component
 
 public  class TelegramBotListener extends TelegramLongPollingBot {
+    private String name;
+
     @Autowired
     private UserRepository userRepository;
+    @Autowired
+    private CategoryRepository categoryRepository;
 
-
-    final TelegramBotConfiguration config;
-
+    TelegramBotConfiguration config;
+    @Autowired
+    private Map<String,Command> commandList;
+    private static final Map<Long,String> contextMap=new HashMap<>();
+    @Autowired
+    private DocumentUploader documentUploader;
+    @Autowired
+    private DocumentDownloader documentDownloader;
 
     static final String HELP_TEXT="This bot add category tree, delete element category, shows category tree \n\n"+
             "you can execute commands from the main menu on the left or by typing a command \n\n"+
@@ -51,86 +64,68 @@ public  class TelegramBotListener extends TelegramLongPollingBot {
     private org.hibernate.sql.Update update;
 
 
-    public TelegramBotListener (TelegramBotConfiguration config) {
-
+    @PostConstruct
+    public void TelegramBotListener ( TelegramBotConfiguration config) {
         this.config = config;
+        commandList=new HashMap<>();
+      commandList.put("/start", new StartCommand());
+      commandList.put("/help", new HelpCommand());
+      commandList.put("/addRoot", new AddRoot());
+      commandList.put("/addCategory", new ChildCategory());
+      commandList.put("/viewCategory", new ViewCategory());
+      commandList.put("/removeCategory", new RemoveCategory());
 
-        List<BotCommand> listOfCommands=new ArrayList<>();
-        listOfCommands.add(new BotCommand("/start", "get a welcome message"));
-        listOfCommands.add(new BotCommand("/help","info how to use this bot"));
-        listOfCommands.add(new BotCommand("/addRoot","add Root Category"));
-        listOfCommands.add(new BotCommand("/addCategory","add child category"));
-        listOfCommands.add(new BotCommand("/viewCategory","shows category tree"));
-
-        try{
-            this.execute(new SetMyCommands(listOfCommands, new BotCommandScopeDefault(),null));
-        }catch (TelegramApiException e){
-
-            log.error("Error setting bot command list");
-
-        }
-
-        }
+    }
 
     @Override
-    public void onUpdateReceived(Update update) {
-        if(update.hasMessage() && update.getMessage().hasText()){
-            String messageText=update.getMessage().getText();
-            long chatId=update.getMessage().getChatId();
-            switch (messageText){
-                case "/start":
-                    registerUser(update.getMessage());
-                    try {
-                        startCommandReceived(chatId, update.getMessage().getChat().getFirstName());
-                    } catch (TelegramApiException e) {
-                        throw new RuntimeException(e);
-                    }
-                    break;
-                case "/help":
-                    sendMessage(chatId, HELP_TEXT);
-                    break;
-                case "/addRoot":
-                    addRoot(chatId);
-                    break;
+    public synchronized void onUpdateReceived(Update update) {
 
-                default:
-                    sendMessage(chatId, "Sorry, command was not recognized! ");
+        String lastMessage = contextMap.put(Update.getMessage()
+                        .getFrom()
+                        .getId(),
+                update.getMessage()
+                        .getText());
+        boolean documentUploadWaiting = Object.equals(lastMessage, "/upload");
+        if (documentUploadWaiting) {
+            onUpdateReceivedDocument(update);
+        } else {
+            onUpdateReceived(update);
+        }
+    }
 
-            }
-        }else if (update.hasCallbackQuery()){
-            String callbackData=update.getCallbackQuery().getData();
-            long messageId = update.getCallbackQuery().getMessage().getMessageId();
-            long chatId = update.getCallbackQuery().getMessage().getChatId();
-            if (callbackData.equals("YES_BUTTON")){
-                String text = "You have added a root category";
-                EditMessageText message = new EditMessageText();
-                message.setChatId(String.valueOf(chatId));
-                message.setText(text);
-                message.setMessageId((int)messageId);
-
-                try {
-                    execute(message);
-                }catch (TelegramApiException e){
-                    log.error("Error occurred: "+ e.getMessage());
-                }
-            }else if(callbackData.equals("NO_BUTTON")){
-                String text = "You haven't added a root category";
-                EditMessageText message = new EditMessageText();
-                message.setChatId(String.valueOf(chatId));
-                message.setText(text);
-                message.setMessageId((int)messageId);
-
-                try {
-                    execute(message);
-                }catch (TelegramApiException e){
-                    log.error("Error occurred: "+ e.getMessage());
-                }
-
-            }
-
+        public void onUpdateReceived(Update update)  {
+        String answer;
+        UpdateReceiver updateReceiver = new UpdateReceiver(update);
+        try {
+            Command command = new commandList.get(update.getMessage().getText());
+            command.execute();
+        }catch (TelegramApiException e){
+            log.error("Error occurred: "+ e.getMessage());
+        }
+        if (updateReceiver.getCommand().equals("/download"))sendDocument(updateReceiver);
+        else {
+            sendMessage(updateReceiver.getUserId(),answer);
         }
 
     }
+
+
+    private void onUpdateReceivedDocument(Update update) throws TelegramApiException {
+        String answer;
+        if ((update.getMessage().hasDocument())){
+            String filed =update.getMessage().getDocument().getFileId();
+            GetFile getFile=new GetFile();
+            getFile.setFileId(filed);
+            String filePath=execute(getFile).getFilePath();
+            String file;
+            file = File.getFileUrl("tempFile", "xlsx");
+            downloadFile(filePath, new java.io.File(file));
+            answer=documentUploader.upload(file);
+
+        }
+    }
+
+
 
    private void addRoot(long chatId){
         SendMessage message = new SendMessage();
