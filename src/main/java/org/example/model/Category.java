@@ -1,10 +1,14 @@
 package org.example.model;
 
 import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 
 
 import javax.persistence.*;
 @Data
+@Getter
+@Setter
 @Entity
 @Table(name = "category")
 public class Category {
@@ -26,7 +30,7 @@ public class Category {
      * в 30 символов.
      */
     @Column( length = 30)
-    private String title;
+    private String name;
 
     /**
      * Идентификатор чата.
@@ -41,27 +45,13 @@ public class Category {
     public Category(Long id, Long parentId, String title, long chatId) {
         this.id = id;
         this.parentId = parentId;
-        this.title = title;
+        this.name = getName();
         this.chatId = chatId;
     }
 
-    public Category() {
+    public Category(long l, String root, long chatId) {
 
     }
 
-    public void setId(Long id) {
-        this.id = id;
-    }
 
-    public void setParentId(Long parentId) {
-        this.parentId = parentId;
-    }
-
-    public void setName() {
-        this.title = title;
-    }
-
-    public void setChatId(long chatId) {
-        this.chatId = chatId;
-    }
 }

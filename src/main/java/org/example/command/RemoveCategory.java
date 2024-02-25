@@ -1,13 +1,14 @@
 package org.example.command;
 
-import lombok.AllArgsConstructor;
 import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.EqualsAndHashCode;
+import lombok.Generated;
+import lombok.Setter;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.example.config.TelegramBotListener;
 import org.example.service.CategoryService;
-import org.hibernate.sql.Update;
-import org.springframework.stereotype.Service;
+import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
 /**
@@ -16,27 +17,25 @@ import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
  */
 
+@EqualsAndHashCode()
+@Slf4j
 @Data
-@AllArgsConstructor
-@NoArgsConstructor(force = true)
-public class RemoveCommand implements Command {
-    private final TelegramBotListener telegramBotListener;
-    private final CategoryService categoryService;
+@Generated
+@Setter
+@Component
+public class RemoveCategory implements Command {
+    private TelegramBotListener telegramBotListener;
+    private CategoryService categoryService;
     private org.telegram.telegrambots.meta.api.objects.Update update;
 
-
-    @Override
-    public void execute(Update update) throws TelegramApiException {
-
-    }
 
     /**
      * Метод для выполнения команды /removeElement.
      * Отправляет сообщение об удалении элемента или об ошибке, если пользователь неверно удалил команду
-     *
-     * @param update объект {@link Update}, содержит информацию о сообщении пользователя.
      */
-    // @Override
+
+
+   @Override
     public void execute(org.telegram.telegrambots.meta.api.objects.Update update) throws TelegramApiException {
           String message;
           long chatId = update.getMessage().getChatId();
@@ -53,7 +52,12 @@ public class RemoveCommand implements Command {
 
     @Override
     public String getCommand() {
-        return "/removeCommand";
+        return "/removeElement";
+    }
+
+    @Override
+    public void execute() {
+
     }
 
 

@@ -1,21 +1,30 @@
 package org.example.command;
 
 import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.Generated;
+import lombok.Setter;
+import lombok.extern.slf4j.Slf4j;
 import org.example.config.TelegramBotListener;
 import org.example.service.CategoryService;
 import org.hibernate.sql.Update;
-import org.springframework.stereotype.Service;
+import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
 /**
  * Класс  для отображения дерева категорий при вызове команды
  * /viewTree.
  */
+@EqualsAndHashCode()
+@Slf4j
 @Data
-@Service
+@Generated
+@Setter
+@Component
+
 public class ViewCommand implements Command{
-    private final TelegramBotListener telegramBotListener;
-    private final CategoryService categoryService;
+    private  TelegramBotListener telegramBotListener;
+    private  CategoryService categoryService;
 
 
     /**
@@ -23,21 +32,28 @@ public class ViewCommand implements Command{
      *
      * @param update объект {@link Update}, содержит информацию о сообщении пользователя.
      */
+
+
     @Override
-     public void execute(org.telegram.telegrambots.meta.api.objects.Update update) throws TelegramApiException {
-         long chatId=update.getMessage().getChatId();
+    public void execute(org.telegram.telegrambots.meta.api.objects.Update update) throws TelegramApiException {
+        long chatId=update.getMessage().getChatId();
         String message = categoryService.view(chatId);
         telegramBotListener.sendMessage(chatId, message);
-      }
-
-    @Override
-    public void execute(Update update) throws TelegramApiException {
 
     }
+
+
+
     @Override
     public String getCommand() {
-        return "/viewCommand";
+        return "/viewElement";
     }
+
+    @Override
+    public void execute() {
+
+    }
+
 
 }
 
