@@ -1,7 +1,6 @@
 package org.example.config;
 
 import lombok.Data;
-import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.objects.Document;
 import org.telegram.telegrambots.meta.api.objects.Update;
 
@@ -14,7 +13,7 @@ import org.telegram.telegrambots.meta.api.objects.Update;
  */
 
 @Data
-@Component
+
 public class UpdateReceiver {
     private org.telegram.telegrambots.meta.api.objects.Update update;
 

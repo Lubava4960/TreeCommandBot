@@ -7,6 +7,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.http.client.OkHttp3ClientHttpRequestFactory;
+import org.springframework.stereotype.Component;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestTemplate;
@@ -17,7 +18,7 @@ import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 /**
  * Класс DocumentUploader используется для загрузки документов на сервер Telegram.
  */
-
+@Component
 public class DocumentUploader implements Command {
     public String uploadDocument(String chatId) {
         RestTemplate restTemplate = new RestTemplate(new OkHttp3ClientHttpRequestFactory());
