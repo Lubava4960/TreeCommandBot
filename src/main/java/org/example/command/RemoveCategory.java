@@ -6,14 +6,14 @@ import lombok.Generated;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.example.config.TelegramBotListener;
 import org.example.service.CategoryService;
 import org.springframework.stereotype.Component;
+import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
 /**
  * Класс для удаления командой категорий при вызове команды
- * /removeElement.
+ * /removeTree.
 
  */
 
@@ -36,7 +36,7 @@ public class RemoveCategory implements Command {
 
 
    @Override
-    public void execute(org.telegram.telegrambots.meta.api.objects.Update update) throws TelegramApiException {
+    public void execute(Update update) throws TelegramApiException {
           String message;
           long chatId = update.getMessage().getChatId();
            String text = update.getMessage().getText().trim();
@@ -45,20 +45,19 @@ public class RemoveCategory implements Command {
               String category = StringUtils.substring(commandArray[1], 0, commandArray[1].length() - 1);
               message = categoryService.remove(category, chatId);
            } else {
-              message = "Вы неверно оформили команду /removeElement";
+              message = "Вы неверно оформили команду /removeTree";
           }
           telegramBotListener.sendMessage(chatId,text);
-         }
+
+
+   }
 
     @Override
     public String getCommand() {
-        return "/removeElement";
+        return "/removeTree";
     }
 
-    @Override
-    public void execute() {
 
-    }
 
 
 }

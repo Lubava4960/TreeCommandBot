@@ -44,6 +44,8 @@ public class DocumentUploader implements Command {
     @Override
     public void execute(Update update) throws TelegramApiException {
 
+
+
     }
 
     @Override
@@ -51,8 +53,7 @@ public class DocumentUploader implements Command {
         return "/upload";
     }
 
-    @Override
-    public void execute() {
 
-    }
+
+
 }

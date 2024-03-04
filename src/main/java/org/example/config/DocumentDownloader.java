@@ -70,8 +70,10 @@ public class DocumentDownloader implements Command {
         return "path/to/file.jpg";
     }
 
+
     @Override
     public void execute(Update update) throws TelegramApiException {
+
 
     }
 
@@ -80,8 +82,7 @@ public class DocumentDownloader implements Command {
         return "/download";
     }
 
-    @Override
-    public void execute() {
 
-    }
+
+
 }

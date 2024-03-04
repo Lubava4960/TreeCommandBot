@@ -5,8 +5,8 @@ import lombok.EqualsAndHashCode;
 import lombok.Generated;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
-import org.example.config.TelegramBotListener;
 import org.springframework.stereotype.Component;
+import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 @EqualsAndHashCode()
 @Slf4j
@@ -31,7 +31,7 @@ public class HelpCommand implements org.example.command.Command {
 
 
     @Override
-    public void execute(org.telegram.telegrambots.meta.api.objects.Update update) throws TelegramApiException {
+    public void execute(Update update) throws TelegramApiException {
 
         if (update.hasMessage() && update.getMessage().hasText()) {
             String messageText = update.getMessage().getText();
@@ -50,6 +50,7 @@ public class HelpCommand implements org.example.command.Command {
         }
 
 
+
     }
 
 
@@ -58,10 +59,7 @@ public class HelpCommand implements org.example.command.Command {
         return "/help";
     }
 
-    @Override
-    public void execute() {
 
-    }
 
 
 }

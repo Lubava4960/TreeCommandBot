@@ -28,7 +28,7 @@ public class UpdateReceiver {
         }
 
 
-        return "";
+        return " ";
     }
 
     public Long getUserId() {

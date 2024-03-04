@@ -5,7 +5,6 @@ import lombok.EqualsAndHashCode;
 import lombok.Generated;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
-import org.example.config.TelegramBotListener;
 import org.example.service.CategoryService;
 import org.hibernate.sql.Update;
 import org.springframework.stereotype.Component;
@@ -40,19 +39,18 @@ public class ViewCommand implements Command{
         String message = categoryService.view(chatId);
         telegramBotListener.sendMessage(chatId, message);
 
+
+
     }
 
 
 
     @Override
     public String getCommand() {
-        return "/viewElement";
+        return "/viewTree";
     }
 
-    @Override
-    public void execute() {
 
-    }
 
 
 }

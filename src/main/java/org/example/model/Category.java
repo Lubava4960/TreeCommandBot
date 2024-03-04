@@ -4,8 +4,8 @@ import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
 
-
 import javax.persistence.*;
+
 @Data
 @Getter
 @Setter
@@ -52,6 +52,11 @@ public class Category {
     public Category(long l, String root, long chatId) {
 
     }
+//    @ManyToOne
+//    private Category parent;
+//    @OneToMany(mappedBy = "parent", cascade = CascadeType.REMOVE)
+//    private List<Category>children;
+
 
 
 }
